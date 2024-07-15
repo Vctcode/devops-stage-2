@@ -1,56 +1,124 @@
 
 
+# services:
+#   frontend:
+#     build:
+#       context: ./frontend
+#       dockerfile: Dockerfile
+#     ports:
+#       - "5173:5173"
+#     env_file:
+#       - ./frontend/.env
+#     depends_on:
+#       - backend
+#     networks:
+#       - app-network
+
+#   backend:
+#     build:
+#       context: ./backend
+#       dockerfile: Dockerfile
+#     ports:
+#       - "8000:8000"
+#     env_file:
+#       - ./backend/.env
+#     depends_on:
+#       - db
+#     networks:
+#       - app-network
+
+#   db:
+#     image: postgres:13
+#     env_file:
+#       - ./backend/.env
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+#       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+#     ports:
+#       - "5432:5432"
+#     networks:
+#       - app-network
+
+#   adminer:
+#     image: adminer
+#     container_name: adminer
+#     restart: always
+#     ports:
+#       - "8080:8080"
+#     environment:
+#       ADMINER_DEFAULT_SERVER: db
+#     depends_on:
+#       - db
+#     networks:
+#       - app-network
+
+#   proxy:
+#     image: jc21/nginx-proxy-manager:latest
+#     container_name: nginx_proxy_manager
+#     ports:
+#       - "80:80"
+#       - "443:443"
+#       - "81:81"
+#     environment:
+#       DB_SQLITE_FILE: "/data/database.sqlite"
+#     volumes:
+#       - ./data:/data
+#       - ./letsencrypt:/etc/letsencrypt
+#     networks:
+#       - app-network
+#     # depends_on:
+#       - db
+#       - backend
+#       - frontend
+#       - adminer
+
+# networks:
+#   app-network:
+#     driver: bridge
+
+# volumes:
+#   postgres_data:
+#   data:
+#   letsencrypt:
+
+version: '3.8'
+
 services:
+  backend:
+    build:
+      context: ./backend
+    container_name: fastapi_app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file:
+      - ./backend/.env
+
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+    container_name: nodejs_app
     ports:
       - "5173:5173"
     env_file:
       - ./frontend/.env
-    depends_on:
-      - backend
-    networks:
-      - app-network
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
-    env_file:
-      - ./backend/.env
-    depends_on:
-      - db
-    networks:
-      - app-network
 
   db:
-    image: postgres:13
-    env_file:
-      - ./backend/.env
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    image: postgres:latest
+    container_name: postgres_db
     ports:
       - "5432:5432"
-    networks:
-      - app-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - ./backend/.env
 
   adminer:
     image: adminer
     container_name: adminer
-    restart: always
     ports:
       - "8080:8080"
-    environment:
-      ADMINER_DEFAULT_SERVER: db
-    depends_on:
-      - db
-    networks:
-      - app-network
 
   proxy:
     image: jc21/nginx-proxy-manager:latest
@@ -64,17 +132,11 @@ services:
     volumes:
       - ./data:/data
       - ./letsencrypt:/etc/letsencrypt
-    networks:
-      - app-network
     depends_on:
       - db
       - backend
       - frontend
       - adminer
-
-networks:
-  app-network:
-    driver: bridge
 
 volumes:
   postgres_data:
